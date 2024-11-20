@@ -8,8 +8,8 @@ import java.util.Comparator;
  *    Stony Brook ID: 116125954
  *    Recitation: 02
  **/
-public class NameComparator implements Comparator{
-    public int compare(Object a, Object b){
+public class NameComparator implements Comparator<User>{
+    public int compare(User a, User b){
         return -1;
     }
 }

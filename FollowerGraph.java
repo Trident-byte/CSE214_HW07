@@ -1,5 +1,5 @@
 import java.io.Serializable;
-
+import java.util.ArrayList;
 /**
  * The <code>FollowerGraph</code>
  *
@@ -9,5 +9,16 @@ import java.io.Serializable;
  *    Recitation: 02
  **/
 public class FollowerGraph implements Serializable{
-    
+    private ArrayList<User> users;
+    public static final int MAX_USERS = 100;
+    private boolean[][] connections;
+
+    /**
+     * Creates an empty FollowersGraph and intializes
+     * all declared variables.
+     */
+    public FollowerGraph(){
+        users = new ArrayList<>();
+        connections = new boolean[100][100];
+    }
 }
