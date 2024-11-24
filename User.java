@@ -1,5 +1,5 @@
 /**
- * The <code>User</code>
+ * The <code>User</code> represents a user of TWITTOR
  *
  * @author Brian Chau
  *    email brian.chau@stonybrook.edu
@@ -9,7 +9,7 @@
 public class User {
     private String userName;
     private int indexPos;
-    private static int userCount;
+    private static int userCount = 0;
 
     /**
      * Creates a user with an empty string
@@ -17,7 +17,8 @@ public class User {
      */
     public User(){
         userName = "";
-        indexPos = userCount++;
+        indexPos = userCount;
+        userCount++;
     }
 
     /**
@@ -26,7 +27,8 @@ public class User {
      */
     public User(String name){
         userName = name;
-        indexPos = userCount++;
+        indexPos = userCount;
+        userCount++;
     }
 
     /**
