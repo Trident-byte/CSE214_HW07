@@ -1,3 +1,5 @@
+import java.io.Serializable;
+
 /**
  * The <code>User</code> represents a user of TWITTOR
  *
@@ -6,7 +8,7 @@
  *    Stony Brook ID: 116125954
  *    Recitation: 02
  **/
-public class User {
+public class User implements Serializable {
     private String userName;
     private int indexPos;
     private static int userCount = 0;
@@ -79,5 +81,22 @@ public class User {
      */
     public void setUserName(String newName){
         userName = newName;
+    }
+
+    /**
+     * Changes the index of the user
+     *
+     * @param indexPos
+     *    New index of user
+     */
+    public void setIndexPos(int indexPos) {
+        this.indexPos = indexPos;
+    }
+
+    /**
+     * Changes the userCount by 1 after a user is removed
+     */
+    public static void removedUser(){
+        userCount--;
     }
 }

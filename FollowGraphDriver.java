@@ -1,3 +1,4 @@
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
@@ -21,6 +22,23 @@ public class FollowGraphDriver {
     public static void main(String[] args){
         Scanner input = new Scanner(System.in);
         FollowerGraph graph = new FollowerGraph();
+        FileOutputStream file = null;
+        try{
+            FileInputStream test = new FileInputStream("follow_graph.obj");
+            ObjectInputStream inStream = new ObjectInputStream(test);
+            graph = (FollowerGraph) inStream.readObject();
+            file = new FileOutputStream("follow_graph.obj");
+        }
+        catch(IOException | ClassNotFoundException e){
+            System.out.println("follow_graph.obj is not found. New FollowGraph object will be created.");
+            createNewFile("follow_graph.obj");
+            try{
+                file = new FileOutputStream("follow_graph.obj");
+            }
+            catch(FileNotFoundException t){
+                System.out.println("Couldn't connect to file");
+            }
+        }
         boolean running = true;
         printMenu();
         while(running){
@@ -57,6 +75,7 @@ public class FollowGraphDriver {
                 findEveryPath(input, graph);
             }
             else if(command.equals("Q")){
+                save(file, graph);
                 running = false;
             }
         }
@@ -102,6 +121,7 @@ public class FollowGraphDriver {
         prompt += "(SB) Sort Users by Number of Followers\n";
         prompt += "(SC) Sort Users by Number of Following\n";
         prompt += "(Q) Quit\n";
+        prompt += "Enter a Selection: ";
         String option = prompter(input, prompt).strip().toUpperCase();
         if(option.equals("SA")){
             NameComparator nameComparator = new NameComparator();
@@ -123,11 +143,14 @@ public class FollowGraphDriver {
     }
 
     private static void removeAUser(Scanner input, FollowerGraph graph){
-
+        String userToRemove = prompter(input, "Please enter the user to remove: ");
+        graph.removeUser(userToRemove);
     }
 
     private static void removeAConnection(Scanner input, FollowerGraph graph){
-
+        String startUser = prompter(input, "Please enter the source of the connection to remove: ");
+        String endUser = prompter(input, "Please enter the dest of the connection to remove: ");
+        graph.removeConnection(startUser, endUser);
     }
 
     private static void findShortest(Scanner input, FollowerGraph graph){
@@ -138,7 +161,9 @@ public class FollowGraphDriver {
         String startUser = prompter(input, "Please enter the desired source: ");
         String endUser = prompter(input, "Please enter the desired destination: ");
         ArrayList<String> list = graph.allPaths(startUser, endUser);
-        printArrayList(list);
+        if(list != null){
+            printArrayList(list);
+        }
     }
 
     private static String prompter(Scanner input, String prompt){
@@ -156,4 +181,25 @@ public class FollowGraphDriver {
             System.out.println(path);
         }
     }
+
+    private static void save(FileOutputStream file, FollowerGraph graph){
+        try{
+            ObjectOutputStream outStream = new ObjectOutputStream(file);
+            outStream.writeObject(graph);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
+    private static void createNewFile(String fileName){
+        File newFile = new File("follow_graph.obj");
+        try{
+            newFile.createNewFile();
+        } catch(Exception e){
+            System.out.println("Couldn't create file");
+        }
+    }
+
 }

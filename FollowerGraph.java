@@ -52,7 +52,12 @@ public class FollowerGraph implements Serializable{
      *    The user being follwed
      */
     public void addConnection(String userFrom, String userTo){
-        connections[findIndices(userFrom)][findIndices(userTo)] = true;
+        try{
+            connections[findIndices(userFrom)][findIndices(userTo)] = true;
+        }
+        catch(IllegalArgumentException e){
+            System.out.println(e.getMessage());
+        }
     }
 
     /**
@@ -64,7 +69,29 @@ public class FollowerGraph implements Serializable{
      *    The user being unfollwed
      */
     public void removeConnection(String userFrom, String userTo){
-        connections[findIndices(userFrom)][findIndices(userTo)] = false;
+        try{
+            connections[findIndices(userFrom)][findIndices(userTo)] = false;
+        }
+        catch(IllegalArgumentException e){
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void removeUser(String userToRemove){
+        try{
+            int index = findIndices(userToRemove);
+            users.get(users.size() - 1).setIndexPos(index);
+            connections[index] = connections[users.size() - 1];
+            for(int i = 0; i < users.size(); i++){
+                connections[i][index] = connections[i][users.size() - 1];
+            }
+            users.set(index, users.get(users.size() - 1));
+            users.remove(users.size() - 1);
+            User.removedUser();
+        }
+        catch(IllegalArgumentException e){
+            System.out.println(e.getMessage());
+        }
     }
 
     public String shortestPath(String userFrom, String userTo){
@@ -72,9 +99,15 @@ public class FollowerGraph implements Serializable{
     }
 
     public ArrayList<String> allPaths(String userFrom, String userTo){
-        User start = users.get(findIndices(userFrom));
-        ArrayList<User> startingList = new ArrayList<>();
-        return recursiveAllPaths(start, users.get(findIndices(userTo)), startingList);
+        try{
+            User start = users.get(findIndices(userFrom));
+            ArrayList<User> startingList = new ArrayList<>();
+            return recursiveAllPaths(start, users.get(findIndices(userTo)), startingList);
+        }
+        catch(IllegalArgumentException e){
+            System.out.println(e.getMessage());
+        }
+        return null;
     }
 
     public ArrayList<String> findAllLoops(){
@@ -102,23 +135,33 @@ public class FollowerGraph implements Serializable{
     }
 
     public void printAllFollowers(String userName){
-        int userIndex = findIndices(userName);
-        for(int i = 0; i < users.size(); i++){
-            if(connections[userIndex][i]){
-                System.out.print(users.get(i).toString() + ", ");
+        try{
+            int userIndex = findIndices(userName);
+            for(int i = 0; i < users.size(); i++){
+                if(connections[userIndex][i]){
+                    System.out.print(users.get(i).toString() + ", ");
+                }
             }
+            System.out.println();
         }
-        System.out.println();
+        catch(IllegalArgumentException e){
+            System.out.println(e.getMessage());
+        }
     }
 
     public void printAllFollowing(String userName){
-        int userIndex = findIndices(userName);
-        for(int i = 0; i < users.size(); i++){
-            if(connections[i][userIndex]){
-                System.out.print(users.get(i).toString() + ", ");
+        try{
+            int userIndex = findIndices(userName);
+            for(int i = 0; i < users.size(); i++){
+                if(connections[i][userIndex]){
+                    System.out.print(users.get(i).toString() + ", ");
+                }
             }
+            System.out.println();
         }
-        System.out.println();
+        catch(IllegalArgumentException e){
+            System.out.println(e.getMessage());
+        }
     }
 
     /**
@@ -214,14 +257,14 @@ public class FollowerGraph implements Serializable{
         }
     }
 
-    private int findIndices(String user){
+    private int findIndices(String user) throws IllegalArgumentException{
         for(int i = 0; i < users.size(); i++){
             User u = users.get(i);
             if(u.getUserName().equals(user)){
                 return i;
             }
         }
-        return -1;
+        throw new IllegalArgumentException("User not found");
     }
 
     private boolean checkRepeat(ArrayList<User> testPath){
