@@ -1,4 +1,5 @@
 import java.util.Comparator;
+import java.util.jar.Attributes.Name;
 
 /**
  * The <code>FollowersComparator</code> compares users based on
@@ -39,6 +40,11 @@ public class FollowersComparator implements Comparator<User>{
     public int compare(User a, User b){
         int AFollower = graph.findFollowers(a);
         int BFollower = graph.findFollowers(b);
-        return Integer.compare(AFollower, BFollower);
+        int difference = -1 * Integer.compare(AFollower, BFollower);
+        if(difference == 0){
+            NameComparator tieBreaker = new NameComparator();
+            return tieBreaker.compare(a, b);
+        }
+        return difference;
     }
 }

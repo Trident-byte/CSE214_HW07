@@ -41,6 +41,7 @@ public class FollowerGraph implements Serializable{
         }
         User newUser = new User(userName);
         users.add(newUser);
+        newUser.setIndexPos(users.indexOf(newUser));
     }
 
     /**
@@ -53,7 +54,7 @@ public class FollowerGraph implements Serializable{
      */
     public void addConnection(String userFrom, String userTo){
         try{
-            connections[findIndices(userFrom)][findIndices(userTo)] = true;
+            connections[findIndices(userTo)][findIndices(userFrom)] = true;
         }
         catch(IllegalArgumentException e){
             System.out.println(e.getMessage());
@@ -70,13 +71,19 @@ public class FollowerGraph implements Serializable{
      */
     public void removeConnection(String userFrom, String userTo){
         try{
-            connections[findIndices(userFrom)][findIndices(userTo)] = false;
+            connections[findIndices(userTo)][findIndices(userFrom)] = false;
         }
         catch(IllegalArgumentException e){
             System.out.println(e.getMessage());
         }
     }
 
+    /**
+     * Removes a user from the adjacency matrix
+     * 
+     * @param userToRemove
+     *    Name of user to remove
+     */
     public void removeUser(String userToRemove){
         try{
             int index = findIndices(userToRemove);
@@ -94,10 +101,72 @@ public class FollowerGraph implements Serializable{
         }
     }
 
+    /**
+     * Finds the shortest path from userFrom to userTo
+     * 
+     * @param userFrom
+     *    Name of starting user
+     * @param userTo
+     *    Name of desired end user
+     * @return
+     *    Returns the string representation of the path along with distance
+     *    or "" if there is no path.
+     */
     public String shortestPath(String userFrom, String userTo){
-        return "";
+        double[][] dist = new double[users.size()][users.size()];
+        User[][] next= new User[users.size()][users.size()];
+        for(double[] init: dist){
+            Arrays.fill(init, Double.POSITIVE_INFINITY);
+        }
+        for(int i = 0; i < users.size(); i++){
+            for(int j = 0; j < users.size(); j++){
+                if(j == i){
+                    dist[j][i] = 0;
+                }
+                if(connections[j][i]){
+                    next[j][i] = users.get(j);
+                    dist[j][i] = 1;
+                }
+            }
+        }
+        for(int k = 0; k < users.size(); k++){
+            for(int i = 0; i < users.size(); i++){
+                for(int j = 0; j < users.size(); j++){
+                    if(dist[j][k] + dist[k][i] < dist[j][i]){
+                        dist[j][i] = dist[j][k] + dist[k][i];
+                        next[j][i] = next[k][i];
+                    } 
+                }
+            }
+        }
+        int start = findIndices(userFrom);
+        int end = findIndices(userTo);
+        if(next[end][start] == null){
+            System.out.println(end + " " + start);
+            return "No path was found";
+        }
+        ArrayList<User> path = new ArrayList<>();
+        User curUser = users.get(start);
+        path.add(curUser);
+        while(curUser.getIndexPos() != end){
+            curUser = next[end][curUser.getIndexPos()];
+            path.add(curUser);
+        }
+        String ans = "The shortest path is: " + createPath(path) + "\n";
+        ans +=  "The number of users in this path is: " + ((int) dist[end][start] + 1);
+        return ans;
     }
 
+    /**
+     * Returns all paths between two points 
+     * 
+     * @param userFrom
+     *    Name of starting user
+     * @param userTo
+     *    Name of end user
+     * @return
+     *    String representations of all paths
+     */
     public ArrayList<String> allPaths(String userFrom, String userTo){
         try{
             User start = users.get(findIndices(userFrom));
@@ -110,9 +179,17 @@ public class FollowerGraph implements Serializable{
         return null;
     }
 
+    /**
+     * Finds all loops in Twitor
+     * 
+     * @return
+     *    A list of string representations of the loops
+     */
     public ArrayList<String> findAllLoops(){
         ArrayList<String> allLoops = new ArrayList<>();
+        ArrayList<ArrayList<User>> knownLoops = null;
         for(User user: users){
+            // System.out.println(user.getUserName());
             ArrayList<User> startingList = new ArrayList<>();
             allLoops.addAll(recursiveFindAllLoops(user, user, startingList));
         }
@@ -128,12 +205,19 @@ public class FollowerGraph implements Serializable{
     public void printAllUsers(Comparator comp){
         ArrayList<User> copy = new ArrayList<>(users);
         Collections.sort(copy, comp);
-        System.out.printf("%-24s%-25s%s", "Users:", "Number of Followers", "Number Following\n");
+        System.out.println("Users:");
+        System.out.printf("%-24s%-25s%s", "User Name", "Number of Followers", "Number of Following\n");
         for(User user: copy){
             System.out.printf("%-35s%-26d%d\n", user.getUserName(), findFollowers(user), findFollowing(user));
         }
     }
 
+    /**
+     * Prints all the followers of a user
+     * 
+     * @param userName
+     *    Name of the user whose followers will be printed
+     */
     public void printAllFollowers(String userName){
         try{
             int userIndex = findIndices(userName);
@@ -149,6 +233,12 @@ public class FollowerGraph implements Serializable{
         }
     }
 
+    /**
+     * Prints all users followed by a certain user
+     * 
+     * @param userName
+     *    The name of hte user whose people followed will be printed
+     */
     public void printAllFollowing(String userName){
         try{
             int userIndex = findIndices(userName);
@@ -223,107 +313,196 @@ public class FollowerGraph implements Serializable{
         return followers;
     }
 
+    /**
+     * Loads all users from a file
+     * 
+     * @param filename
+     *    Name of the file to be read
+     */
     public void loadAllUsers(String filename){
         try{
-            FileInputStream file = new FileInputStream(filename);
-            ObjectInputStream inStream = new ObjectInputStream(file);
-            FollowerGraph loadedGraph;
-            loadedGraph = (FollowerGraph) inStream.readObject();
-            users = loadedGraph.getUsers();
-
+            File file = new File(filename);
+            Scanner read = new Scanner(file);
+            while(read.hasNextLine()){
+                String userName = read.nextLine();
+                System.out.println(userName + " has been added");
+                addUser(userName);
+            }
+            read.close();
         }
         catch(FileNotFoundException e){
-            System.out.println("Could not find save");
-        }
-        catch(IOException | ClassNotFoundException e){
-            System.out.println("Could not load file");
+            e.printStackTrace();
         }
     }
 
+    /**
+     * Loads all connections from a file that are valid
+     * 
+     * @param filename
+     *    Name of the file to be read
+     */
     public void loadAllConnections(String filename){
         try{
-            FileInputStream file = new FileInputStream(filename);
-            ObjectInputStream inStream = new ObjectInputStream(file);
-            FollowerGraph loadedGraph;
-            loadedGraph = (FollowerGraph) inStream.readObject();
-            connections = loadedGraph.getConnections();
-
+            File file = new File(filename);
+            Scanner read = new Scanner(file);
+            while(read.hasNextLine()){
+                String[] connectionVertices = read.nextLine().split(", ");
+                addConnection(connectionVertices[0], connectionVertices[1]);
+                System.out.println(connectionVertices[0] + ", " + connectionVertices[1] + " added");
+            }
+            read.close();
         }
         catch(FileNotFoundException e){
-            System.out.println("Could not find save");
-        }
-        catch(IOException | ClassNotFoundException e){
-            System.out.println("Could not load file");
+            e.printStackTrace();
         }
     }
 
-    private int findIndices(String user) throws IllegalArgumentException{
+    /**
+     * Returns the index of a user given the name. Throws an error if
+     * user is not found. 
+     * 
+     * @param user
+     *    The name of the user
+     * @return
+     *    The index of the user
+     * @throws IllegalArgumentException
+     *    Thrown if the user is not found
+     */
+    public int findIndices(String user) throws IllegalArgumentException{
         for(int i = 0; i < users.size(); i++){
             User u = users.get(i);
             if(u.getUserName().equals(user)){
                 return i;
             }
         }
-        throw new IllegalArgumentException("User not found");
+        throw new IllegalArgumentException("There is no user with this name, Please choose a valid user!");
     }
 
+    /**
+     * Checks if the loops has already been found
+     * 
+     * @param testPath
+     *    The loop which will be checked
+     * @return
+     *    True if the loop has already been repeated
+     *    False if the loop is new
+     */
     private boolean checkRepeat(ArrayList<User> testPath){
         if(knownLoops == null){
             knownLoops = new ArrayList<>();
-            knownLoops.add(testPath);
-            return true;
+            ArrayList<User> knownLoop = new ArrayList<>(testPath);
+            knownLoops.add(knownLoop);
+            return false;
         }
         for(ArrayList<User> path: knownLoops){
-            if(path.get(0) == testPath.get(testPath.size() - 1) && path.get(1) == testPath.get(0)){
-                knownLoops.add(testPath);
-                return true;
+            if(path.size() == testPath.size()){
+                int start = path.indexOf(testPath.get(0));
+                boolean difference = false;
+                for(int i = 0; i < path.size(); i++){
+                    if(start == -1){
+                        difference = true;
+                        break;
+                    }
+                    if(!testPath.get(i).getUserName().equals(path.get((i+start)%path.size()).getUserName())){
+                        difference = true;
+                        break;
+                    }
+                }
+                if(!difference){
+                    return true;
+                }
             }
         }
+        System.out.println(createPath(testPath));
+        ArrayList<User> knownLoop = new ArrayList<>(testPath);
+        knownLoops.add(knownLoop);
         return false;
     }
 
+    /**
+     * Recursive method to find all loops
+     * 
+     * @param startingUser
+     *    Starting user for the loops
+     * @param curUser
+     *    The current user object
+     * @param curPath
+     *    The path of users between startingUser and curUser taken
+     * @return
+     *    A list of string representations of the loops
+     */
     private ArrayList<String> recursiveFindAllLoops(User startingUser, User curUser, ArrayList<User> curPath){
         ArrayList<String> loops = new ArrayList<>();
         if(curUser == startingUser && curPath.size() != 0){
-            curPath.add(curUser);
-            if(checkRepeat(curPath)){
+            if(!checkRepeat(curPath)){
+                curPath.add(curUser);
                 loops.add(createPath(curPath));
+            }
+            else{
+                curPath.add(curUser);
             }
             return loops;
         }
+        curPath.add(curUser);
         if(curPath.size() == users.size()){
             return loops;
         }
-        curPath.add(curUser);
-        for(int i = 0; i < connections[curUser.getIndexPos()].length; i++){
-            if(connections[curUser.getIndexPos()][i]){
+        // System.out.println(createPath(curPath));
+        for(int i = 0; i < users.size(); i++){
+            // System.out.println(users.get(i) + " " + connections[i][curUser.getIndexPos()]);
+            if(connections[i][curUser.getIndexPos()]){
                 loops.addAll(recursiveFindAllLoops(startingUser, users.get(i), curPath));
+                if(!curPath.isEmpty()){
+                    curPath.remove(curPath.size() - 1);
+                }
             }
         }
         return loops;
     }
 
+    /**
+     * Recursively finds all paths between two users
+     * 
+     * @param curUser
+     *    Current user that is being checked
+     * @param endUser
+     *    The end user that designates the end of the path
+     * @param curPath
+     *    The current path the recursive function is on
+     * @return
+     *    List of string representations of paths between end and start user
+     */
     private ArrayList<String> recursiveAllPaths(User curUser, User endUser, ArrayList<User> curPath){
         ArrayList<String> knownPaths = new ArrayList<>();
-        if(curUser == endUser){
+        if(curPath.contains(curUser)){
             curPath.add(curUser);
+            return knownPaths;
+        }
+        curPath.add(curUser);
+        if(curUser == endUser){
             String path = createPath(curPath);
             knownPaths.add(path);
             return knownPaths;
         }
-        else if(curPath.contains(curUser)){
-            return knownPaths;
-        }
-        curPath.add(curUser);
         for(int i = 0; i < users.size(); i++){
-            if(connections[curUser.getIndexPos()][i]){
+            if(connections[i][curUser.getIndexPos()]){
                 knownPaths.addAll(recursiveAllPaths(users.get(i), endUser, curPath));
-                curPath.remove(curPath.size() - 1);
+                if(!curPath.isEmpty()){
+                    curPath.remove(curPath.size() - 1);
+                }
             }
         }
         return knownPaths;
     }
 
+    /**
+     * Turns path of users into a string representation of the path 
+     * 
+     * @param curPath
+     *    Path of users that is being converted
+     * @return
+     *    String representation of the path
+     */
     private String createPath(ArrayList<User> curPath){
         String path = "";
         for(User user: curPath){

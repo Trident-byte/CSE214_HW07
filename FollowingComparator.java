@@ -39,6 +39,11 @@ public class FollowingComparator implements Comparator<User>{
     public int compare(User a, User b){
         int AFollowing = graph.findFollowing(a);
         int BFollowing = graph.findFollowing(b);
-        return Integer.compare(AFollowing, BFollowing);
+        int difference = -1 * Integer.compare(AFollowing, BFollowing);
+        if(difference == 0){
+            NameComparator tieBreaker = new NameComparator();
+            return tieBreaker.compare(a, b);
+        }
+        return difference;
     }
 }
